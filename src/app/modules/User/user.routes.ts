@@ -5,11 +5,15 @@ import { upload } from "../../utils/sendImageToCloudinary";
 
 const router = express.Router();
 
-router.get("/", userControllers.getUsers);
-router.get("/me", auth("admin", "user"), userControllers.getMe);
+router.get(
+  "/",
+  auth("user", "admin", "super_admin"),
+  userControllers.getUsers,
+);
+router.get("/me", auth("user", "admin", "super_admin"), userControllers.getMe);
 router.patch(
   "/edit-profile",
-  auth("admin", "user"),
+  auth("user", "admin", "super_admin"),
   upload.single("image"),
   (req: Request, res: Response, next: NextFunction) => {
     if (req.body.data) {

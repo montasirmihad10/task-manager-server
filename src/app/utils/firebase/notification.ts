@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { getMessaging } from "firebase-admin/messaging";
-import app from "./firebase";
+import { getFirebaseApp } from "./firebase";
 
 export const sendPushNotifications = async (
   tokens: string | string[],
   title: string,
   body: string,
 ) => {
+  const app = getFirebaseApp();
   if (!tokens || !app) return;
 
   const tokenArray: string[] = Array.isArray(tokens) ? tokens : [tokens];

@@ -1,44 +1,57 @@
-import { createLogger, format, transports } from "winston";
-import DailyRotateFile from "winston-daily-rotate-file";
+import { createLogger, format, transports, type Logger } from "winston";
 import path from "path";
 import fs from "fs";
 import { Request, Response, NextFunction } from "express";
 
 import { blue, green, red, yellowBright, magenta, yellow } from "colorette";
 
-// Ensure the logs directory exists
-const logDirectory = path.join(__dirname, "logs");
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+
+const consoleTransport = new transports.Console({
+  format: format.combine(format.colorize(), format.simple()),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const loggerTransports: any[] = [consoleTransport];
+
+if (!isServerless) {
+  const logDirectory = path.join(__dirname, "logs");
+  try {
+    if (!fs.existsSync(logDirectory)) {
+      fs.mkdirSync(logDirectory, { recursive: true });
+    }
+    // Lazy-require so serverless bundles don't need the rotate transport
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const DailyRotateFile = require("winston-daily-rotate-file");
+    loggerTransports.unshift(
+      new DailyRotateFile({
+        filename: path.join(logDirectory, "error-%DATE%.log"),
+        datePattern: "YYYY-MM-DD",
+        level: "error",
+        format: format.combine(format.uncolorize(), format.json()),
+      }),
+      new DailyRotateFile({
+        filename: path.join(logDirectory, "combined-%DATE%.log"),
+        datePattern: "YYYY-MM-DD",
+        format: format.combine(format.uncolorize(), format.json()),
+      }),
+    );
+  } catch {
+    // Fall back to console-only if the filesystem is read-only
+  }
 }
 
-export const logger = createLogger({
-  level: "info", // Set the appropriate logging level
+export const logger: Logger = createLogger({
+  level: "info",
   format: format.combine(
     format.timestamp({ format: "DD-MM-YYYY HH:mm:ss" }),
     format.errors({ stack: true }),
     format.splat(),
     format.json(),
   ),
-  transports: [
-    new DailyRotateFile({
-      filename: path.join(logDirectory, "error-%DATE%.log"),
-      datePattern: "YYYY-MM-DD",
-      level: "error", // Logs only error level
-      format: format.combine(format.uncolorize(), format.json()), // Ensure no color in files
-    }),
-    new DailyRotateFile({
-      filename: path.join(logDirectory, "combined-%DATE%.log"),
-      datePattern: "YYYY-MM-DD",
-      format: format.combine(format.uncolorize(), format.json()), // Ensure no color in files
-    }),
-    new transports.Console({
-      format: format.combine(format.colorize(), format.simple()),
-    }),
-  ],
+  transports: loggerTransports,
 });
 
-// Middleware to log HTTP requests
 export const logHttpRequests = (
   req: Request,
   res: Response,

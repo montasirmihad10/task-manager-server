@@ -16,7 +16,7 @@ const app: Application = express();
 // Request logging
 app.use(logHttpRequests);
 
-// Parser & CORS
+// Parser & CORS (reflect request Origin so credentialed browser calls work)
 app.use(
   cors({
     origin: true,

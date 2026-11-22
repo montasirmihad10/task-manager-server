@@ -8,11 +8,13 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 dotenv.config({
   path: path.join(process.cwd(), `.env.${NODE_ENV}`),
   override: false,
+  quiet: true,
 });
 
 // Also load base .env as fallback for any missing keys
 dotenv.config({
   path: path.join(process.cwd(), ".env"),
+  quiet: true,
 });
 
 const config = {
@@ -39,7 +41,9 @@ const config = {
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   CLOUDINARY_FOLDER_NAME: process.env.CLOUDINARY_FOLDER_NAME,
 
+  /** Prefer CLIENT_URL for invite / email links; LOCAL_URL kept as fallback */
   LOCAL_URL: process.env.LOCAL_URL,
+  CLIENT_URL: process.env.CLIENT_URL || process.env.LOCAL_URL,
 
   ADMIN_EMAIL: process.env.ADMIN_EMAIL,
   ADMIN_PASS: process.env.ADMIN_PASS,

@@ -43,7 +43,8 @@ const createInviteLink = async (
   });
 
   const base =
-    config.LOCAL_URL?.replace(/\/$/, "") || "http://localhost:3000";
+    (config.CLIENT_URL || config.LOCAL_URL)?.replace(/\/$/, "") ||
+    "http://localhost:3000";
   const inviteUrl = `${base}/invite/${token}`;
 
   try {
@@ -220,7 +221,8 @@ const createWithCredentials = async (
   }
 
   const base =
-    config.LOCAL_URL?.replace(/\/$/, "") || "http://localhost:3000";
+    (config.CLIENT_URL || config.LOCAL_URL)?.replace(/\/$/, "") ||
+    "http://localhost:3000";
   const loginUrl = `${base}/login`;
 
   try {
