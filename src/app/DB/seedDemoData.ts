@@ -475,6 +475,88 @@ export const seedDemoData = async () => {
       });
     }
 
+    // Soft-delete leftover empty demo team boards so admin overview isn't blank
+    const leftoverTeams = await WorkspaceModel.find({
+      isPersonal: false,
+      isDeleted: { $ne: true },
+      slug: { $ne: TEAM_SLUG },
+      name: { $regex: /^demo\b/i },
+    });
+    for (const leftover of leftoverTeams) {
+      const n = await TaskModel.countDocuments({
+        workspaceId: leftover._id,
+        isArchived: { $ne: true },
+      });
+      if (n === 0) {
+        leftover.isDeleted = true;
+        await leftover.save();
+      }
+    }
+
+    // Seed a few cards on the platform admin personal board (charts shouldn't be all zeros)
+    const adminPersonal = await WorkspaceModel.findOne({
+      ownerId: admin._id,
+      isPersonal: true,
+      isDeleted: { $ne: true },
+    });
+    if (adminPersonal) {
+      await workspaceStatusServices.seedDefaultStatuses(
+        String(adminPersonal._id),
+      );
+      const adminTaskCount = await TaskModel.countDocuments({
+        workspaceId: adminPersonal._id,
+        isArchived: { $ne: true },
+      });
+      if (adminTaskCount === 0) {
+        const adminPersonalTasks = [
+          {
+            title: "Review Acme Product Team board",
+            status: "general",
+            dueOffset: 1,
+          },
+          {
+            title: "Check landing CMS content",
+            status: "in-progress",
+            dueOffset: 2,
+          },
+          {
+            title: "Verify legal pages publish",
+            status: "backlog",
+            dueOffset: 4,
+          },
+          {
+            title: "Confirm invite flow end-to-end",
+            status: "paused",
+            dueOffset: 6,
+          },
+          {
+            title: "Ship production smoke checklist",
+            status: "ready-to-launch",
+            dueOffset: 0,
+          },
+        ];
+        for (const def of adminPersonalTasks) {
+          const due = daysFromNow(def.dueOffset);
+          await TaskModel.create({
+            title: def.title,
+            assignTo: admin.name || admin.email,
+            status: def.status,
+            start_date: ymd(daysFromNow(def.dueOffset - 3)),
+            end_date: ymd(due),
+            userEmail: admin.email,
+            email: admin.email,
+            workspaceId: adminPersonal._id,
+            createdBy: admin._id,
+            assigneeId: admin._id,
+            description: "Platform admin sample task for overview charts.",
+            priority: TASK_PRIORITY.medium,
+            dueDate: due,
+            isArchived: false,
+          });
+        }
+      }
+    }
+
     // eslint-disable-next-line no-console
     console.log(`
 ────────────────────────────────────────

@@ -189,7 +189,16 @@ const listMyWorkspaces = async (userId: string) => {
       ...(m.workspaceId as object),
       membershipRole: m.role,
       membershipId: m._id,
-    }));
+    }))
+    .sort((a, b) => {
+      // Team workspaces first so overview/charts open on populated boards
+      const aPersonal = Boolean((a as { isPersonal?: boolean }).isPersonal);
+      const bPersonal = Boolean((b as { isPersonal?: boolean }).isPersonal);
+      if (aPersonal !== bPersonal) return aPersonal ? 1 : -1;
+      const aName = String((a as { name?: string }).name || "");
+      const bName = String((b as { name?: string }).name || "");
+      return aName.localeCompare(bName);
+    });
 };
 
 const getWorkspaceById = async (workspaceId: string, userId: string) => {
