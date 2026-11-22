@@ -1,0 +1,41 @@
+/* eslint-disable @typescript-eslint/no-namespace */
+import { Types } from "mongoose";
+import { Server as SocketIo } from "socket.io";
+import type { TWorkspaceRole } from "../constants/workspace";
+
+export interface JwtPayload {
+  user: Types.ObjectId | string;
+  email: string;
+  role: "user" | "admin" | "super_admin";
+  iat?: number;
+  exp?: number;
+}
+
+export const USER_ROLE = {
+  admin: "admin",
+  user: "user",
+  super_admin: "super_admin",
+} as const;
+
+export type TUserRole = keyof typeof USER_ROLE;
+
+export type WorkspaceContext = {
+  workspaceId: string;
+  membershipId: string;
+  role: TWorkspaceRole;
+  userId: string;
+};
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: JwtPayload;
+      workspace?: WorkspaceContext;
+    }
+  }
+  namespace NodeJS {
+    interface Global {
+      io: SocketIo;
+    }
+  }
+}

@@ -1,0 +1,20 @@
+import express from "express";
+import auth from "../../../middlewares/auth";
+import { aboutControllers } from "./About.controller";
+
+const router = express.Router();
+
+router.post(
+  "/create",
+  auth("admin", "super_admin"),
+  aboutControllers.createAbout,
+);
+router.get("/", aboutControllers.getAllAbout);
+router.get("/html", aboutControllers.htmlRoute);
+router.patch(
+  "/update",
+  auth("admin", "super_admin"),
+  aboutControllers.updateAbout,
+);
+
+export const AboutRoutes = router;

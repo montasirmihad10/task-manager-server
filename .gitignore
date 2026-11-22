@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+
+# Firebase / GCP service account keys
+**/config/*.json
+**/serviceAccount*.json
+**/firebase*.json
+!**/tsconfig*.json
+
+# Logs
+logs/
+**/logger/logs/*
+!**/logger/logs/.gitkeep
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Uploads / generated public assets (keep folder via .gitkeep)
+/public/*
+!/public/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*~
+
+# Backups / local junk
+*.bak
+*.tmp
+*.temp
+*.old
+*.legacy.*
+
+# Vercel / local tooling
+.vercel/
+.cursor/
+.claude/
+agent-transcripts/
