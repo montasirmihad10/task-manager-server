@@ -13,6 +13,12 @@ router.get(
 );
 
 router.get(
+  "/platform",
+  auth("admin", "super_admin"),
+  dashboardControllers.platformSummary,
+);
+
+router.get(
   "/workspace",
   auth("user", "admin", "super_admin"),
   requireWorkspaceRole(

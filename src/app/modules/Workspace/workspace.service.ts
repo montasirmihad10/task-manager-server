@@ -172,7 +172,35 @@ const assertWorkspaceAllowsInvites = async (workspaceId: string) => {
   return workspace;
 };
 
+const sortWorkspaces = <T extends { isPersonal?: boolean; name?: string }>(
+  list: T[],
+) =>
+  [...list].sort((a, b) => {
+    // Team workspaces first so overview/charts open on populated boards
+    if (Boolean(a.isPersonal) !== Boolean(b.isPersonal)) {
+      return a.isPersonal ? 1 : -1;
+    }
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+
 const listMyWorkspaces = async (userId: string) => {
+  const user = await UserModel.findById(userId).select("role");
+  const isPlatformAdmin =
+    user?.role === "admin" || user?.role === "super_admin";
+
+  // Platform admins see every workspace; product users only their memberships
+  if (isPlatformAdmin) {
+    const all = await WorkspaceModel.find({ isDeleted: false }).lean();
+    return sortWorkspaces(
+      all.map((w) => ({
+        ...w,
+        membershipRole: WORKSPACE_ROLE.admin,
+        membershipId: `platform:${String(w._id)}`,
+        isPlatformVisible: true,
+      })),
+    );
+  }
+
   const memberships = await WorkspaceMemberModel.find({
     userId,
     status: MEMBERSHIP_STATUS.active,
@@ -183,22 +211,22 @@ const listMyWorkspaces = async (userId: string) => {
     })
     .lean();
 
-  return memberships
+  const mapped = memberships
     .filter((m) => m.workspaceId)
-    .map((m) => ({
-      ...(m.workspaceId as object),
-      membershipRole: m.role,
-      membershipId: m._id,
-    }))
-    .sort((a, b) => {
-      // Team workspaces first so overview/charts open on populated boards
-      const aPersonal = Boolean((a as { isPersonal?: boolean }).isPersonal);
-      const bPersonal = Boolean((b as { isPersonal?: boolean }).isPersonal);
-      if (aPersonal !== bPersonal) return aPersonal ? 1 : -1;
-      const aName = String((a as { name?: string }).name || "");
-      const bName = String((b as { name?: string }).name || "");
-      return aName.localeCompare(bName);
+    .map((m) => {
+      const ws = m.workspaceId as unknown as {
+        isPersonal?: boolean;
+        name?: string;
+        [key: string]: unknown;
+      };
+      return {
+        ...ws,
+        membershipRole: m.role,
+        membershipId: m._id,
+      };
     });
+
+  return sortWorkspaces(mapped);
 };
 
 const getWorkspaceById = async (workspaceId: string, userId: string) => {

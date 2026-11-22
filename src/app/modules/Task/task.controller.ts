@@ -196,9 +196,17 @@ const moveStatusBack = catchAsync(async (req, res) => {
 });
 
 const getTaskStats = catchAsync(async (req, res) => {
-  const email = req.query.email as string | undefined;
+  const user = req.user as { user?: string; role?: string; email?: string };
+  const email = (req.query.email as string | undefined) || user?.email;
   const workspaceId = req.query.workspaceId as string | undefined;
-  const result = await taskServices.getTaskStats(email, workspaceId);
+  const scope = req.query.scope as string | undefined;
+  const result = await taskServices.getTaskStats({
+    userId: String(user?.user || ""),
+    role: String(user?.role || "user"),
+    email,
+    workspaceId,
+    scope,
+  });
 
   sendResponse(res, {
     statusCode: HttpStatus.OK,

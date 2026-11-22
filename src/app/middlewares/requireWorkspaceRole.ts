@@ -67,11 +67,12 @@ const requireWorkspaceRole = (...requiredRoles: TWorkspaceRole[]) => {
 
     const workspaceId = await resolveWorkspaceId(req);
 
-    if (req.user.role === "super_admin") {
+    // Platform operators can inspect any workspace (product users stay membership-scoped)
+    if (req.user.role === "super_admin" || req.user.role === "admin") {
       if (workspaceId) {
         req.workspace = {
           workspaceId,
-          membershipId: "super_admin",
+          membershipId: String(req.user.role),
           role: "admin",
           userId: String(req.user.user),
         };

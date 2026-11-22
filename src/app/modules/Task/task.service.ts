@@ -457,12 +457,29 @@ const assignTask = async (
   return task.populate("assigneeId", "name email profileImage");
 };
 
-const getTaskStats = async (email?: string, workspaceId?: string) => {
+const getTaskStats = async (opts: {
+  userId: string;
+  role: string;
+  email?: string;
+  workspaceId?: string;
+  scope?: string;
+}) => {
   const match: Record<string, unknown> = { isArchived: { $ne: true } };
-  if (workspaceId) {
-    match.workspaceId = new Types.ObjectId(workspaceId);
-  } else if (email) {
-    match.$or = [{ userEmail: email }, { email }];
+  const isPlatformAdmin =
+    opts.role === "admin" || opts.role === "super_admin";
+
+  if (isPlatformAdmin && (opts.scope === "platform" || !opts.workspaceId)) {
+    // Platform operators see product-wide pipeline totals
+  } else if (opts.workspaceId) {
+    match.workspaceId = new Types.ObjectId(opts.workspaceId);
+  } else {
+    // Regular users: only workspaces they belong to (never global)
+    const memberships = await WorkspaceMemberModel.find({
+      userId: opts.userId,
+      status: MEMBERSHIP_STATUS.active,
+    }).select("workspaceId");
+    const ids = memberships.map((m) => m.workspaceId);
+    match.workspaceId = { $in: ids };
   }
 
   const stats = await TaskModel.aggregate([

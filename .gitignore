@@ -2,8 +2,6 @@
 node_modules/
 
 # Environment & secrets (never commit)
-.env
-.env.*
 !.env.example
 *.pem
 *.p12
@@ -40,7 +38,6 @@ coverage/
 # OS / editor
 .DS_Store
 Thumbs.db
-.vscode/
 .idea/
 *.suo
 *.ntvs*
@@ -62,3 +59,7 @@ Thumbs.db
 .claude/
 agent-transcripts/
 .vercel
+
+.env.vercel*
+.env.backup.*
+config.bat

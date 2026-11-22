@@ -17,9 +17,12 @@ const mine = catchAsync(async (req, res) => {
 
 const workspaceSummary = catchAsync(async (req, res) => {
   const user = req.user as JwtPayload;
+  const isPlatformAdmin =
+    user.role === "admin" || user.role === "super_admin";
   const result = await dashboardServices.getWorkspaceSummary(
     String(req.query.workspaceId),
     String(user.user),
+    { platformAdmin: isPlatformAdmin },
   );
   sendResponse(res, {
     statusCode: HttpStatus.OK,
@@ -29,4 +32,27 @@ const workspaceSummary = catchAsync(async (req, res) => {
   });
 });
 
-export const dashboardControllers = { mine, workspaceSummary };
+const platformSummary = catchAsync(async (req, res) => {
+  const user = req.user as JwtPayload;
+  if (user.role !== "admin" && user.role !== "super_admin") {
+    return sendResponse(res, {
+      statusCode: HttpStatus.FORBIDDEN,
+      success: false,
+      message: "Platform summary is restricted to administrators",
+      data: null,
+    });
+  }
+  const result = await dashboardServices.getPlatformSummary();
+  sendResponse(res, {
+    statusCode: HttpStatus.OK,
+    success: true,
+    message: "Platform summary retrieved",
+    data: result,
+  });
+});
+
+export const dashboardControllers = {
+  mine,
+  workspaceSummary,
+  platformSummary,
+};
